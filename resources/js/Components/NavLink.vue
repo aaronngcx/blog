@@ -18,4 +18,8 @@ const classes = computed(() => {
     <Link :href="href" :class="classes">
         <slot />
     </Link>
+    
+    <Link :href="route('posts.index')" :class="classes">
+        Posts
+    </Link>
 </template>
