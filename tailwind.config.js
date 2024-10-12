@@ -17,6 +17,18 @@ export default {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
+            typography: ({theme}) => ({
+                DEFAULT: {
+                    css: {
+                        '--tw-prose-bullets': theme('colors.black.500'),
+                        li: {
+                            p: {
+                                margin:0,
+                            }
+                        }
+                    },
+                },
+            }),
         },
     },
 
