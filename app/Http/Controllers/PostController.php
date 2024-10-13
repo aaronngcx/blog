@@ -61,10 +61,11 @@ class PostController extends Controller
 
     public function show($id)
     {
-        $post = Post::with('tags')->findOrFail($id);
+        $post = Post::with('tags', 'comments')->findOrFail($id);
 
         return Inertia::render('Posts/Show', [
             'post' => $post,
+            'comments' => $post->comments,
             'canEdit' => Auth::user()->can('update', $post),
         ]);
     }

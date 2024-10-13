@@ -13,12 +13,14 @@ const props = defineProps({
 });
 
 const successMessage = ref('');
-const searchQuery = ref('');
+const searchQuery = ref(''); // Reactive variable for search input
 
+// Function to filter posts based on search query
 const filteredPosts = computed(() => {
-    if (!searchQuery.value) return props.posts;
-    const query = searchQuery.value.toLowerCase();
+    if (!searchQuery.value) return props.posts; // If no search query, return all posts
+    const query = searchQuery.value.toLowerCase(); // Normalize query for case-insensitive search
     return props.posts.filter(post => {
+        // Check if the title or content includes the search query
         return post.title.toLowerCase().includes(query) || post.content.toLowerCase().includes(query);
     });
 });

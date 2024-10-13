@@ -1,38 +1,43 @@
 <script setup>
-import { Link, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SectionBorder from '@/Components/SectionBorder.vue';
-import { router } from '@inertiajs/vue3'
-import { ref } from 'vue';
+import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
     post: {
         type: Object,
         required: true
     },
+    comments: {
+        type: Array,
+        default: () => []
+    },
     canEdit: {
         type: Boolean,
         default: false
+    },
+    auth: {
+        type: Object,
+        default: () => null
     }
 });
 
-const successMessage = ref('');
-
-const { delete: destroy } = useForm({
-        id: '',
-})
-
-function handleDelete() {
-    if (confirm('Are you sure you want to delete this post?')) {
-        router.delete(route('posts.destroy', props.post.id), {
-            onSuccess: () => {
-                successMessage.value = 'Post deleted successfully!';
-                Inertia.visit(route('posts.index'));
-            },
-            preserveScroll: true
-        });
-    }
+const author = ref(props.auth ? props.auth.name : '');
+const content = ref('');
+if (props.auth.user) {
+    author.value = props.auth.user.name;
 }
+const handleCommentSubmit = () => {
+    router.post(route('comments.store', props.post.id), {
+        author: author.value,
+        content: content.value,
+    });
+    
+    author.value = props.auth ? props.auth.name : '';
+    content.value = '';
+};
 </script>
 
 <template>
@@ -72,12 +77,53 @@ function handleDelete() {
                         <Link :href="route('posts.edit', post.id)" class="btn btn-primary bg-blue-600 text-white px-4 py-2 rounded">
                             Edit
                         </Link>
-                        <form @submit.prevent="handleDelete(post.id)">
+                        <form @submit.prevent="handleDelete()">
                             <button type="submit" class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md transition duration-200">
                                 Delete
                             </button>
                         </form>
                     </div>
+                </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold">Comments</h3>
+
+                <div class="mt-4">
+                    <div v-if="comments.length === 0" class="text-gray-500">No comments yet.</div>
+                    <div v-else>
+                        <!-- <h4 class="font-medium">All Comments:</h4> -->
+                        <ul class="mt-4">
+                            <li v-for="comment in comments" :key="comment.id" class="bg-white p-4 rounded-lg mb-4">
+                                <strong>{{ comment.author }}</strong>
+                                <p class="mt-1">{{ comment.content }}</p>
+                                <p class="text-gray-500 text-xs mt-1">{{ new Date(comment.created_at).toLocaleDateString() }}</p>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Comment Form -->
+                <div class="mt-6">
+                    <form @submit.prevent="handleCommentSubmit" class="mb-6">
+                        <div>
+                            <label for="author" class="block text-sm font-medium text-gray-700">Your Name</label>
+                            <input 
+                                v-model="author" 
+                                type="text" 
+                                id="author" 
+                                required 
+                                :disabled="!!props.auth" 
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" 
+                            />
+                        </div>
+                        <div class="mt-4">
+                            <label for="content" class="block text-sm font-medium text-gray-700">Comment</label>
+                            <textarea v-model="content" id="content" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                        </div>
+                        <button type="submit" class="mt-4 bg-blue-600 text-white py-2 px-4 rounded-md">Submit Comment</button>
+                    </form>
                 </div>
             </div>
         </div>
