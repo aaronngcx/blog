@@ -19,7 +19,7 @@ class PostFactory extends Factory
             'user_id' => User::factory(),
             'title' => $title,
             'content' => $this->faker->paragraphs(3, true),
-            'slug' => Str::slug($title) . '-' . Str::random(6),
+            'url_slug' => Str::slug($title) . '-' . Str::random(6),
             'meta_description' => $this->faker->sentence,
             'deleted_at' => null,
         ];

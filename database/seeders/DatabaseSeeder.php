@@ -18,6 +18,5 @@ class DatabaseSeeder extends Seeder
 
         Post::factory(3)->create();
 
-
     }
 }

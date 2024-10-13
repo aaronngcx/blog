@@ -4,45 +4,34 @@ import { useForm } from "@inertiajs/vue3";
 import AppLayout from "@/Layouts/AppLayout.vue";
 import SectionBorder from "@/Components/SectionBorder.vue";
 import MyEditor from "@/Components/MyEditor.vue";
+import { usePage } from "@inertiajs/vue3";
 
-const form = useForm({
-    title: "",
-    content: "<h1>Heading here</h1> <p>I’m running Tiptap with Vue.js. !!!🎉</p>",
-    url_slug: "",
-    meta_description: "",
-    tags: [],  // Initialize an empty array for tags
+const props = defineProps({
+    post: Object,
 });
 
-function addTag(tag) {
-    if (tag && !form.tags.includes(tag)) {
-        form.tags.push(tag);
-    }
-}
-
-function removeTag(tagToRemove) {f
-    form.tags = form.tags.filter(tag => tag !== tagToRemove);
-}
-
-function preventEnter(event) {
-    if (event.key === 'Enter') {
-        event.preventDefault(); 
-    }
-}
+const form = useForm({
+    title: props.post.title,
+    content: props.post.content,
+    url_slug: props.post.url_slug,
+    meta_description: props.post.meta_description,
+});
 
 function submit() {
-    form.post(route('posts.store'), {
+    form.put(route('posts.update', props.post.id), {
         preserveScroll: true,
         onSuccess: () => {
+            alert('Post updated successfully!')
         }
-    })
+    });
 }
 </script>
 
 <template>
-    <AppLayout title="Create Post">
+    <AppLayout title="Edit Post">
         <template #header>
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Create New Post
+                Edit Post
             </h2>
         </template>
 
@@ -60,7 +49,6 @@ function submit() {
                             id="title"
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
                             required
-                            @keypress="preventEnter"
                         />
                         <span
                             v-if="form.errors.title"
@@ -75,7 +63,7 @@ function submit() {
                         >Content</label>
                     </div>
                     <MyEditor v-model="form.content"/>
-                    
+
                     <div>
                         <label
                             for="url_slug"
@@ -86,7 +74,6 @@ function submit() {
                             type="text"
                             id="url_slug"
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                            @keypress="preventEnter"
                         />
                         <span
                             v-if="form.errors.url_slug"
@@ -104,7 +91,6 @@ function submit() {
                             type="text"
                             id="meta_description"
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                            @keypress="preventEnter"
                         />
                         <span
                             v-if="form.errors.meta_description"
@@ -112,34 +98,9 @@ function submit() {
                         >{{ form.errors.meta_description }}</span>
                     </div>
 
-                    <div>
-                        <label
-                            for="tags"
-                            class="block text-sm font-medium text-gray-700"
-                        >Tags</label>
-                        <input
-                            type="text"
-                            id="tags"
-                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                            placeholder="Add a tag and press Enter"
-                            @keyup.enter="addTag($event.target.value); $event.target.value='';"
-                            @keypress="preventEnter"
-                        />
-                        <div class="mt-2">
-                            <span
-                                v-for="(tag, index) in form.tags"
-                                :key="index"
-                                class="inline-flex items-center bg-blue-100 text-blue-800 text-sm font-medium mr-2 px-2.5 py-0.5 rounded-full"
-                            >
-                                {{ tag }}
-                                <button type="button" @click="removeTag(tag)" class="ml-1 text-red-600">x</button>
-                            </span>
-                        </div>
-                    </div>
-
                     <div class="flex justify-end">
                         <button type="submit" class="btn btn-primary bg-blue-600 text-white p-2 rounded">
-                            Create Post
+                            Update Post
                         </button>
                     </div>
                 </div>
@@ -157,12 +118,12 @@ function submit() {
 }
 
 .tiptap h2 {
-    font-size: 16;
+    font-size: 16px;
     font-weight: bold;
 }
 
 .tiptap h3 {
-    font-size: 12;
+    font-size: 12px;
     font-weight: bold;
 }
 </style>
