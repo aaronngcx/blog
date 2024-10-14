@@ -13,14 +13,12 @@ const props = defineProps({
 });
 
 const successMessage = ref('');
-const searchQuery = ref(''); // Reactive variable for search input
+const searchQuery = ref('');
 
-// Function to filter posts based on search query
 const filteredPosts = computed(() => {
-    if (!searchQuery.value) return props.posts; // If no search query, return all posts
-    const query = searchQuery.value.toLowerCase(); // Normalize query for case-insensitive search
+    if (!searchQuery.value) return props.posts;
+    const query = searchQuery.value.toLowerCase();
     return props.posts.filter(post => {
-        // Check if the title or content includes the search query
         return post.title.toLowerCase().includes(query) || post.content.toLowerCase().includes(query);
     });
 });
@@ -53,7 +51,12 @@ function handleDelete(id) {
         <div>
             <div class="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8">
                 <div class="flex justify-between mb-6">
-                    <Link :href="route('posts.create')" class="btn btn-primary bg-blue-600 text-white p-2 rounded">Create New Post</Link>
+                    <Link 
+                        v-if="auth.user" 
+                        :href="route('posts.create')" 
+                        class="btn btn-primary bg-blue-600 text-white p-2 rounded">
+                        Create New Post
+                    </Link>
                     <!-- Search Input -->
                     <input
                         type="text"
@@ -71,7 +74,7 @@ function handleDelete(id) {
                     <div class="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                         <div v-for="post in filteredPosts" :key="post.id" class="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                             <h3 class="text-lg font-semibold">
-                                <Link :href="route('posts.show', post.id)"  class="text-blue-600 hover:underline">
+                                <Link :href="route('posts.show', post.url_slug)"  class="text-blue-600 hover:underline">
                                     {{ post.title }}
                                 </Link>
                             </h3>

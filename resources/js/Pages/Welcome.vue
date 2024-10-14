@@ -31,7 +31,7 @@ const props = defineProps({
                             <ul class="space-y-4">
                                 <li v-for="post in posts" :key="post.id" class="p-4 border rounded-lg bg-gray-50 hover:shadow-md transition-shadow">
                                     <h4 class="text-md font-bold">
-                                        <Link :href="route('posts.show', post.id)" class="text-blue-600 hover:underline">{{ post.title }}</Link>
+                                        <Link :href="route('posts.show', post.url_slug)" class="text-blue-600 hover:underline">{{ post.title }}</Link>
                                     </h4>
                                     <p class="mt-2 text-gray-600">{{ post.meta_description }}</p>
                                     <div class="mt-2 flex justify-between items-center">

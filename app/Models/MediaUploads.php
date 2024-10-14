@@ -5,11 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Comment extends Model
+class MediaUploads extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['post_id', 'author', 'content'];
+    protected $fillable = [
+        'post_id',
+        'file_name',
+        'file_path',
+        'file_type',
+    ];
 
     public function post()
     {

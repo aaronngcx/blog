@@ -9,6 +9,10 @@ const props = defineProps({
     posts: {
         type: Array,
         required: true
+    },
+    auth: {
+        type: Object,
+        default: () => null,
     }
 });
 
@@ -51,8 +55,13 @@ function handleDelete(id) {
         <div>
             <div class="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8">
                 <div class="flex justify-between mb-6">
-                    <Link :href="route('posts.create')" class="btn btn-primary bg-blue-600 text-white p-2 rounded">Create New Post</Link>
-                    <!-- Search Input -->
+                    <Link 
+                        v-if="auth.user" 
+                        :href="route('posts.create')" 
+                        class="btn btn-primary bg-blue-600 text-white p-2 rounded">
+                        Create New Post
+                    </Link>
+
                     <input
                         type="text"
                         v-model="searchQuery"
@@ -69,7 +78,7 @@ function handleDelete(id) {
                     <div class="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                         <div v-for="post in filteredPosts" :key="post.id" class="p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
                             <h3 class="text-lg font-semibold">
-                                <Link :href="route('posts.show', post.id)"  class="text-blue-600 hover:underline">
+                                <Link :href="route('posts.show', post.url_slug)"  class="text-blue-600 hover:underline">
                                     {{ post.title }}
                                 </Link>
                             </h3>

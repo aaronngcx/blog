@@ -14,13 +14,13 @@ class CommentController extends Controller
             'content' => 'required|string',
         ]);
 
-        Comment::create([
+        $comment = Comment::create([
             'post_id' => $postId,
             'author' => $request->author,
             'content' => $request->content,
         ]);
 
-        return redirect()->route('posts.show', $postId);
+        return redirect()->route('posts.show', ['url_slug' => $comment->post->url_slug]);
     }
 
     public function index($postId)

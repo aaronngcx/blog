@@ -7,7 +7,9 @@ use App\Models\Post;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
@@ -54,25 +56,56 @@ class PostController extends Controller
 
         $post->tags()->sync($tagIds);
 
+        if ($request->hasFile('media')) {
+            Log::info('Media files found.');
+
+            foreach ($request->file('media') as $file) {
+                Log::info('Processing file:', [
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'size' => $file->getSize(),
+                ]);
+
+                try {
+                    $filePath = $file->store('media_uploads', 'public');
+                    Log::info('File stored at: ' . $filePath);
+
+                    $fileUrl = config('app.url') . Storage::url($filePath);
+                    Log::info('Full Path at: ' . $fileUrl);
+
+                    $post->mediaUploads()->create([
+                        'file_name' => $file->getClientOriginalName(),
+                        'file_path' => $fileUrl,
+                        'file_type' => $file->getClientMimeType(),
+                    ]);
+                    Log::info('Media record created successfully.');
+                } catch (\Exception $e) {
+                    Log::error('Error storing file: ' . $e->getMessage());
+                }
+            }
+        } else {
+            Log::info('No media files found in the request.');
+        }
+
+        $post = Post::with(['tags', 'mediaUploads'])->where('url_slug', $post->url_slug)->firstOrFail();
+
         return Inertia::render('Posts/Show', [
-            'post' => $post->load('tags')
+            'post' => $post->with('tags', 'mediaUploads')
         ]);
     }
 
-    public function show($id)
+    public function show($url_slug)
     {
-        $post = Post::with('tags', 'comments')->findOrFail($id);
+        $post = Post::where('url_slug', $url_slug)->firstOrFail();
 
-        return Inertia::render('Posts/Show', [
+        return inertia('Posts/Show', [
             'post' => $post,
-            'comments' => $post->comments,
-            'canEdit' => Auth::user()->can('update', $post),
         ]);
     }
 
     public function edit($id)
     {
-        $post = Post::find($id);
+        $post = Post::with('mediaUploads', 'tags')->find($id);
 
         return Inertia::render('Posts/Edit', ['post' => $post]);
     }
@@ -93,9 +126,11 @@ class PostController extends Controller
         $tags = $request->input('tags');
         $tagIds = [];
         foreach ($tags as $tagName) {
-            $tag = Tag::firstOrCreate(['name' => Str::slug($tagName)]);
+            $tag = Tag::firstOrCreate(['name' => Str::slug($tagName)], []);
+
             $tagIds[] = $tag->id;
         }
+
         $post->tags()->sync($tagIds);
 
         return redirect()->route('posts.index')

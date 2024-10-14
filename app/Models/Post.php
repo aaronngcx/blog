@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Tag;
+use App\Models\MediaUploads;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,4 +31,15 @@ class Post extends Model
     {
         return $this->hasMany(Comment::class);
     }
+
+    public function getRouteKeyName()
+    {
+        return 'url_slug';
+    }
+
+    public function mediaUploads()
+    {
+        return $this->hasMany(MediaUploads::class);
+    }
+
 }

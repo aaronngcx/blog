@@ -114,7 +114,6 @@ const handleCommentSubmit = () => {
                                 type="text" 
                                 id="author" 
                                 required 
-                                :disabled="!!props.auth" 
                                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" 
                             />
                         </div>

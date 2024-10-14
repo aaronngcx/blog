@@ -7,10 +7,11 @@ import MyEditor from "@/Components/MyEditor.vue";
 
 const form = useForm({
     title: "",
-    content: "<h1>Heading here</h1> <p>I’m running Tiptap with Vue.js. !!!🎉</p>",
+    content: "",
     url_slug: "",
     meta_description: "",
-    tags: [],  // Initialize an empty array for tags
+    tags: [],
+    media: []
 });
 
 function addTag(tag) {
@@ -23,6 +24,10 @@ function removeTag(tagToRemove) {f
     form.tags = form.tags.filter(tag => tag !== tagToRemove);
 }
 
+function handleFileUpload(event) {
+    form.media = Array.from(event.target.files);
+}
+
 function preventEnter(event) {
     if (event.key === 'Enter') {
         event.preventDefault(); 
@@ -30,11 +35,28 @@ function preventEnter(event) {
 }
 
 function submit() {
+    const formData = new FormData();
+
+    Object.keys(form).forEach((key) => {
+        if (key === 'media') {
+            form[key].forEach((file, index) => {
+                formData.append(`media[${index}]`, file);
+            });
+        } else {
+            formData.append(key, form[key]);
+        }
+    });
+
     form.post(route('posts.store'), {
+        data: formData,
         preserveScroll: true,
         onSuccess: () => {
-        }
-    })
+            form.reset();
+        },
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
 }
 </script>
 
@@ -113,28 +135,45 @@ function submit() {
                     </div>
 
                     <div>
-                        <label
-                            for="tags"
-                            class="block text-sm font-medium text-gray-700"
-                        >Tags</label>
+                        <label for="media" class="block text-sm font-medium text-gray-700">Upload Media</label>
                         <input
-                            type="text"
-                            id="tags"
+                            type="file"
+                            id="media"
+                            @change="handleFileUpload"
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                            placeholder="Add a tag and press Enter"
-                            @keyup.enter="addTag($event.target.value); $event.target.value='';"
-                            @keypress="preventEnter"
+                            multiple
                         />
                         <div class="mt-2">
+                            <span v-for="(file, index) in form.media" :key="index" class="block text-sm text-gray-700">
+                                {{ file.name }}
+                            </span>
+                        </div>
+                        <span v-if="form.errors.media" class="text-red-500 text-sm">{{ form.errors.media }}</span>
+                    </div>
+
+                    <div>
+                        <label for="tags" class="block text-sm font-medium text-gray-700">Tags</label>
+                        <div class="flex items-center mb-2">
+                            <input
+                                type="text"
+                                id="tags"
+                                class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                                placeholder="Add a tag and press Enter"
+                                @keyup.enter="addTag($event.target.value); $event.target.value='';"
+                                @keypress="preventEnter"
+                            />
+                        </div>
+                        <div class="flex flex-wrap">
                             <span
                                 v-for="(tag, index) in form.tags"
                                 :key="index"
-                                class="inline-flex items-center bg-blue-100 text-blue-800 text-sm font-medium mr-2 px-2.5 py-0.5 rounded-full"
+                                class="bg-blue-200 text-blue-800 rounded-full px-2 py-1 text-sm mr-2 mb-2 flex items-center"
                             >
                                 {{ tag }}
-                                <button type="button" @click="removeTag(tag)" class="ml-1 text-red-600">x</button>
+                                <button type="button" @click="removeTag(index)" class="ml-1 text-red-600">x</button>
                             </span>
                         </div>
+                        <span v-if="form.errors.tags" class="text-red-500 text-sm">{{ form.errors.tags }}</span>
                     </div>
 
                     <div class="flex justify-end">
