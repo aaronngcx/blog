@@ -28,6 +28,11 @@ function removeTag(index) {
     form.tags.splice(index, 1);
 }
 
+const updateSlug = (event) => {
+      const inputValue = event.target.value;
+      form.url_slug = formatSlug(inputValue);
+};
+
 function formatSlug(text) {
     return text
         .trim()
@@ -38,26 +43,29 @@ function formatSlug(text) {
         .replace(/^-+|-+$/g, '');
 }
 
-watch(() => form.title, (newTitle) => {
-    form.url_slug = formatSlug(newTitle);
-});
+watch(
+    () => form.title,
+    (newTitle) => {
+        form.url_slug = formatSlug(newTitle);
+    }
+);
 
 function handleFileUpload(event) {
     form.media = Array.from(event.target.files);
 }
 
 function preventEnter(event) {
-    if (event.key === 'Enter') {
-        event.preventDefault(); 
+    if (event.key === "Enter") {
+        event.preventDefault();
     }
 }
 
 function submit() {
-    form.put(route('posts.update', props.post.id), {
+    form.put(route("posts.update", props.post.id), {
         preserveScroll: true,
         onSuccess: () => {
-            alert('Post updated successfully!');
-        }
+            alert("Post updated successfully!");
+        },
     });
 }
 </script>
@@ -75,42 +83,99 @@ function submit() {
                 <div class="grid gap-6">
                     <!-- Title Input -->
                     <div>
-                        <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
-                        <input v-model="form.title" type="text" id="title" @keypress="preventEnter" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" required />
-                        <span v-if="form.errors.title" class="text-red-500 text-sm">{{ form.errors.title }}</span>
+                        <label
+                            for="title"
+                            class="block text-sm font-medium text-gray-700"
+                            >Title</label
+                        >
+                        <input
+                            v-model="form.title"
+                            type="text"
+                            id="title"
+                            @keypress="preventEnter"
+                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                            required
+                        />
+                        <span
+                            v-if="form.errors.title"
+                            class="text-red-500 text-sm"
+                            >{{ form.errors.title }}</span
+                        >
                     </div>
 
                     <!-- Content Input -->
                     <div>
-                        <label for="content" class="block text-sm font-medium text-gray-700">Content</label>
+                        <label
+                            for="content"
+                            class="block text-sm font-medium text-gray-700"
+                            >Content</label
+                        >
                     </div>
-                    <MyEditor v-model="form.content"/>
+                    <MyEditor v-model="form.content" />
 
                     <!-- URL Slug Input -->
                     <div>
-                        <label for="url_slug" class="block text-sm font-medium text-gray-700">URL Slug</label>
-                        <input v-model="form.url_slug" type="text" id="url_slug" @keypress="preventEnter" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
-                        <span v-if="form.errors.url_slug" class="text-red-500 text-sm">{{ form.errors.url_slug }}</span>
+                        <label
+                            for="url_slug"
+                            class="block text-sm font-medium text-gray-700"
+                            >URL Slug</label
+                        >
+                        <input
+                            v-model="form.url_slug"
+                            type="text"
+                            id="url_slug"
+                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                            @blur="updateSlug"
+                            @keypress="preventEnter"
+                        />
+                        <span
+                            v-if="form.errors.url_slug"
+                            class="text-red-500 text-sm"
+                            >{{ form.errors.url_slug }}</span
+                        >
                     </div>
 
                     <!-- Meta Description Input -->
                     <div>
-                        <label for="meta_description" class="block text-sm font-medium text-gray-700">Meta Description</label>
-                        <input v-model="form.meta_description" type="text" id="meta_description" @keypress="preventEnter" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
-                        <span v-if="form.errors.meta_description" class="text-red-500 text-sm">{{ form.errors.meta_description }}</span>
+                        <label
+                            for="meta_description"
+                            class="block text-sm font-medium text-gray-700"
+                            >Meta Description</label
+                        >
+                        <input
+                            v-model="form.meta_description"
+                            type="text"
+                            id="meta_description"
+                            @keypress="preventEnter"
+                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                        />
+                        <span
+                            v-if="form.errors.meta_description"
+                            class="text-red-500 text-sm"
+                            >{{ form.errors.meta_description }}</span
+                        >
                     </div>
 
                     <!-- Tags Input -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Tags</label>
+                        <label class="block text-sm font-medium text-gray-700"
+                            >Tags</label
+                        >
                         <div class="flex flex-wrap gap-2 mb-2">
                             <span
                                 v-for="(tag, index) in form.tags"
                                 :key="index"
                                 class="bg-blue-200 text-blue-800 rounded-full px-3 py-1 text-sm flex items-center"
                             >
-                                {{ tag.name }} <!-- Accessing tag name -->
-                                <button type="button" @click="removeTag(tag)" class="ml-2 text-red-600">&times;</button>
+                                {{ tag.name }}
+                                <!-- Accessing tag name -->
+                                <button
+                                    type="button"
+                                    @click="removeTag(tag)"
+                                    class="ml-2 text-red-600"
+                                >
+                                    &times;
+                                </button>
                             </span>
                         </div>
                         <input
@@ -118,36 +183,74 @@ function submit() {
                             id="tags"
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
                             placeholder="Add a tag and press Enter"
-                            @keyup.enter="addTag($event.target.value); $event.target.value='';"
+                            @keyup.enter="
+                                addTag($event.target.value);
+                                $event.target.value = '';
+                            "
                             @keypress="preventEnter"
                         />
-                        <span v-if="form.errors.tags" class="text-red-500 text-sm">{{ form.errors.tags }}</span>
+                        <span
+                            v-if="form.errors.tags"
+                            class="text-red-500 text-sm"
+                            >{{ form.errors.tags }}</span
+                        >
                     </div>
-
 
                     <!-- Media Section -->
                     <div>
-                    <label class="block text-sm font-medium text-gray-700">Media Uploads</label>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
-                        <div v-for="media in post.media_uploads" :key="media.id" class="border p-2 rounded-md">
-                            <img :src="media.file_path" alt="Media" class="w-full h-auto rounded-md mb-2" />
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm">{{ media.file_name }}</span>
-                                <button type="button" @click="removeMedia(media.id)" class="text-red-600">Remove</button>
+                        <label class="block text-sm font-medium text-gray-700"
+                            >Media Uploads</label
+                        >
+                        <div
+                            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-2"
+                        >
+                            <div
+                                v-for="media in post.media_uploads"
+                                :key="media.id"
+                                class="border p-2 rounded-md"
+                            >
+                                <img
+                                    :src="media.file_path"
+                                    alt="Media"
+                                    class="w-full h-auto rounded-md mb-2"
+                                />
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm">{{
+                                        media.file_name
+                                    }}</span>
+                                    <button
+                                        type="button"
+                                        @click="removeMedia(media.id)"
+                                        class="text-red-600"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
                     <!-- Upload Media Button -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Upload New Media</label>
-                        <input type="file" @change="handleFileUpload" multiple class="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+                        <label class="block text-sm font-medium text-gray-700"
+                            >Upload New Media</label
+                        >
+                        <input
+                            type="file"
+                            @change="handleFileUpload"
+                            multiple
+                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                        />
                     </div>
 
                     <!-- Update Button -->
                     <div class="flex justify-end">
-                        <button type="submit" class="btn btn-primary bg-blue-600 text-white p-2 rounded">Update Post</button>
+                        <button
+                            type="submit"
+                            class="btn btn-primary bg-blue-600 text-white p-2 rounded"
+                        >
+                            Update Post
+                        </button>
                     </div>
                 </div>
             </form>

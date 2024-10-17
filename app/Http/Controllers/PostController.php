@@ -16,15 +16,22 @@ class PostController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $posts = Post::all();
+        $search = $request->input('search');
+        $posts = Post::with('user')
+            ->when($search, function ($query, $search) {
+                return $query->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('content', 'like', '%' . $search . '%');
+            })
+            ->paginate(9);
 
         return Inertia::render('Posts/Index', [
             'posts' => $posts,
             'user' => Auth::user(),
         ]);
     }
+
 
     public function create()
     {
@@ -89,14 +96,12 @@ class PostController extends Controller
 
         $post = Post::with(['tags', 'mediaUploads'])->where('url_slug', $post->url_slug)->firstOrFail();
 
-        return Inertia::render('Posts/Show', [
-            'post' => $post->with('tags', 'mediaUploads')
-        ]);
+        return redirect()->route('posts.show', ['url_slug' => $post->url_slug]);
     }
 
     public function show($url_slug)
     {
-        $post = Post::where('url_slug', $url_slug)->firstOrFail();
+        $post = Post::with(['tags', 'mediaUploads', 'comments'])->where('url_slug', $url_slug)->firstOrFail();
 
         return inertia('Posts/Show', [
             'post' => $post,
@@ -126,10 +131,14 @@ class PostController extends Controller
         $tags = $request->input('tags');
         $tagIds = [];
         foreach ($tags as $tagName) {
-            $tag = Tag::firstOrCreate(['name' => Str::slug($tagName)], []);
-
-            $tagIds[] = $tag->id;
+            if (is_string($tagName)) {
+                $tag = Tag::firstOrCreate(
+                    ['name' => Str::slug($tagName)],
+                    []
+                );
+            }
         }
+        
 
         $post->tags()->sync($tagIds);
 

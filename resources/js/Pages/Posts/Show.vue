@@ -10,10 +10,6 @@ const props = defineProps({
         type: Object,
         required: true
     },
-    comments: {
-        type: Array,
-        default: () => []
-    },
     canEdit: {
         type: Boolean,
         default: false
@@ -91,11 +87,11 @@ const handleCommentSubmit = () => {
                 <h3 class="text-lg font-semibold">Comments</h3>
 
                 <div class="mt-4">
-                    <div v-if="comments.length === 0" class="text-gray-500">No comments yet.</div>
+                    <div v-if="post.comments.length === 0" class="text-gray-500">No comments yet.</div>
                     <div v-else>
                         <!-- <h4 class="font-medium">All Comments:</h4> -->
                         <ul class="mt-4">
-                            <li v-for="comment in comments" :key="comment.id" class="bg-white p-4 rounded-lg mb-4">
+                            <li v-for="comment in post.comments" :key="comment.id" class="bg-white p-4 rounded-lg mb-4">
                                 <strong>{{ comment.author }}</strong>
                                 <p class="mt-1">{{ comment.content }}</p>
                                 <p class="text-gray-500 text-xs mt-1">{{ new Date(comment.created_at).toLocaleDateString() }}</p>

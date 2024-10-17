@@ -24,6 +24,22 @@ function removeTag(tagToRemove) {f
     form.tags = form.tags.filter(tag => tag !== tagToRemove);
 }
 
+const updateSlug = (event) => {
+      const inputValue = event.target.value;
+      form.url_slug = formatSlug(inputValue);
+};
+
+function formatSlug(text) {
+    return text
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w-]+/g, '')
+        .replace(/--+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+
 function handleFileUpload(event) {
     form.media = Array.from(event.target.files);
 }
@@ -108,6 +124,7 @@ function submit() {
                             type="text"
                             id="url_slug"
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                            @blur="updateSlug"
                             @keypress="preventEnter"
                         />
                         <span
