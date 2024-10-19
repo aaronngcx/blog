@@ -30,6 +30,9 @@ const logout = () => {
 <template>
     <div>
         <Head :title="title" />
+            <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+        </Head>
+
 
         <Banner />
 
