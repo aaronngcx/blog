@@ -34,6 +34,10 @@ const handleCommentSubmit = () => {
     author.value = props.auth ? props.auth.name : '';
     content.value = '';
 };
+
+const isImage = (media) => {
+        return media && media.file_type && media.file_type.startsWith('image/');
+};
 </script>
 
 <template>
@@ -49,6 +53,34 @@ const handleCommentSubmit = () => {
                 <p class="text-gray-600 mb-4">{{ post.meta_description }}</p>
                 
                 <div v-html="post.content" class="prose prose-lg max-w-none"></div>
+
+                <!-- Media Uploads Section -->
+                <div class="mt-6">
+                    <h3 class="text-lg font-semibold">Media Uploads</h3>
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div 
+                            v-for="media in post.media_uploads" 
+                            :key="media.id" 
+                            class="border rounded-lg overflow-hidden"
+                        >
+                            <template v-if="isImage(media)">
+                                <img 
+                                    :src="media.file_path" 
+                                    :alt="media.name" 
+                                    class="w-full h-64 object-cover"
+                                />
+                            </template>
+                            <template v-else>
+                                <div class="p-4 text-gray-700">
+                                    <p>{{ media.name }}</p>
+                                    <a :href="media.file_path" target="_blank" class="text-blue-600 underline">Download</a>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <SectionBorder />
 
                 <!-- Tags Section -->
                 <div class="mt-4">
@@ -89,7 +121,6 @@ const handleCommentSubmit = () => {
                 <div class="mt-4">
                     <div v-if="post.comments.length === 0" class="text-gray-500">No comments yet.</div>
                     <div v-else>
-                        <!-- <h4 class="font-medium">All Comments:</h4> -->
                         <ul class="mt-4">
                             <li v-for="comment in post.comments" :key="comment.id" class="bg-white p-4 rounded-lg mb-4">
                                 <strong>{{ comment.author }}</strong>

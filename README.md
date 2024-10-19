@@ -19,11 +19,8 @@ Before you begin, ensure you have met the following requirements:
 
 Follow these steps to set up your local development environment:
 
-1. **Clone the Repository**:
-
-   ```bash
+1. Clone the Repository:
    git clone https://github.com/aaronngcx/blog.git
-   cd your-repository
 
 2. composer install
 
@@ -35,8 +32,20 @@ Follow these steps to set up your local development environment:
 
 6. php artisan migrate
 
-7. npm install
+7. php artisan db:seed --class=UserSeeder
 
-8. npm run build
+8. php artisan db:seed --class=StateSeeder
 
-9. php artisan serve
+9 .php artisan storage:link
+
+10. npm run build
+
+11. php artisan serve
+
+Sample User Credentials
+After seeding the database, you can log in with the following credentials:
+
+Email: admin@mail.com
+Password: password
+
+

@@ -180,6 +180,8 @@ function submit() {
                                 @keypress="preventEnter"
                             />
                         </div>
+                        <p class="text-xs italic text-gray-500">Add a tag and press Enter</p>
+
                         <div class="flex flex-wrap">
                             <span
                                 v-for="(tag, index) in form.tags"
