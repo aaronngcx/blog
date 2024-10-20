@@ -15,7 +15,7 @@ class HomeController extends Controller
      */
     public function index()
     {
-        $posts = Post::all(); // Fetch all posts or use pagination if needed
+        $posts = Post::where('status', 'public')->get();
 
         return Inertia::render('Dashboard', [
             'posts' => $posts,

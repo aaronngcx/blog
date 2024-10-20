@@ -19,15 +19,7 @@ const form = useForm({
     media: [],
 });
 
-function addTag(tag) {
-    if (tag && !form.tags.some((t) => t.name === tag)) {
-        form.tags.push({ name: tag });
-    }
-}
-
-function removeTag(index) {
-    form.tags.splice(index, 1);
-}
+const editingTagIndex = ref(null);
 
 const updateSlug = (event) => {
     const inputValue = event.target.value;
@@ -42,6 +34,30 @@ function formatSlug(text) {
         .replace(/[^\w-]+/g, "")
         .replace(/--+/g, "-")
         .replace(/^-+|-+$/g, "");
+}
+
+function addTag(tag) {
+    if (tag && !form.tags.some((t) => t.name === tag)) {
+        form.tags.push({ name: tag });
+    }
+}
+
+function removeTag(index) {
+    form.tags.splice(index, 1);
+}
+
+function editTag(index) {
+    editingTagIndex.value = index;
+}
+
+function updateTag(index, newTagName) {
+    if (
+        newTagName &&
+        !form.tags.some((t, i) => i !== index && t.name === newTagName)
+    ) {
+        form.tags[index].name = newTagName;
+        editingTagIndex.value = null; // Reset editing state
+    }
 }
 
 watch(
@@ -62,7 +78,6 @@ const removeMedia = (index) => {
     form.media.splice(index, 1);
 };
 
-
 function preventEnter(event) {
     if (event.key === "Enter") {
         event.preventDefault();
@@ -73,7 +88,7 @@ function submit() {
     const formData = new FormData();
 
     Object.keys(form).forEach((key) => {
-        if (key === 'media') {
+        if (key === "media") {
             form[key].forEach((file, index) => {
                 formData.append(`media[${index}]`, file);
             });
@@ -82,7 +97,7 @@ function submit() {
         }
     });
 
-    form.post(route('posts.update', props.post.id), formData, {
+    form.post(route("posts.update", props.post.id), formData, {
         preserveScroll: true,
         forceFormData: true,
         onSuccess: () => {
@@ -90,9 +105,6 @@ function submit() {
         },
     });
 }
-
-
-
 </script>
 
 <template>
@@ -181,43 +193,49 @@ function submit() {
                         >
                     </div>
 
-                    <!-- Tags Input -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700"
-                            >Tags</label
+                        <label
+                            for="state"
+                            class="block text-sm font-medium text-gray-700"
+                            >State</label
                         >
-                        <div class="flex flex-wrap gap-2 mb-2">
-                            <span
-                                v-for="(tag, index) in form.tags"
-                                :key="index"
-                                class="bg-blue-200 text-blue-800 rounded-full px-3 py-1 text-sm flex items-center"
+                        <select
+                            v-model="form.state"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        >
+                            <option value="" disabled>Select a state</option>
+                            <option
+                                v-for="state in states"
+                                :key="state.id"
+                                :value="state.id"
                             >
-                                {{ tag.name }}
-                                <!-- Accessing tag name -->
-                                <button
-                                    type="button"
-                                    @click="removeTag(tag)"
-                                    class="ml-2 text-red-600"
-                                >
-                                    &times;
-                                </button>
-                            </span>
-                        </div>
-                        <input
-                            type="text"
-                            id="tags"
-                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                            placeholder="Add a tag and press Enter"
-                            @keyup.enter="
-                                addTag($event.target.value);
-                                $event.target.value = '';
-                            "
-                            @keypress="preventEnter"
-                        />
+                                {{ state.name }}
+                            </option>
+                        </select>
                         <span
-                            v-if="form.errors.tags"
+                            v-if="form.errors.state"
                             class="text-red-500 text-sm"
-                            >{{ form.errors.tags }}</span
+                            >{{ form.errors.state }}</span
+                        >
+                    </div>
+
+                    <div>
+                        <label
+                            for="status"
+                            class="block text-sm font-medium text-gray-700"
+                            >Status</label
+                        >
+                        <select
+                            v-model="form.status"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        >
+                            <option value="public">Public</option>
+                            <option value="hidden">Hidden</option>
+                        </select>
+                        <span
+                            v-if="form.errors.status"
+                            class="text-red-500 text-sm"
+                            >{{ form.errors.status }}</span
                         >
                     </div>
 
@@ -254,6 +272,67 @@ function submit() {
                             v-if="form.errors.media"
                             class="text-red-500 text-sm"
                             >{{ form.errors.media }}</span
+                        >
+                    </div>
+
+                    <!-- Tags Input -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700"
+                            >Tags</label
+                        >
+                        <div class="flex flex-wrap gap-2 mb-2">
+                            <span
+                                v-for="(tag, index) in form.tags"
+                                :key="index"
+                                class="bg-blue-200 text-blue-800 rounded-full px-3 py-1 text-sm flex items-center"
+                            >
+                                <span v-if="editingTagIndex !== index">{{
+                                    tag.name
+                                }}</span>
+                                <input
+                                    v-if="editingTagIndex === index"
+                                    type="text"
+                                    v-model="tag.name"
+                                    @blur="
+                                        editingTagIndex = null;
+                                        updateTag(index, tag.name);
+                                    "
+                                    @keyup.enter="updateTag(index, tag.name)"
+                                    @keydown.enter.prevent
+                                    class="border border-gray-300 rounded-md p-1"
+                                />
+                                <button
+                                    type="button"
+                                    @click="removeTag(index)"
+                                    class="ml-2 text-red-600"
+                                >
+                                    &times;
+                                </button>
+                                <button
+                                    v-if="editingTagIndex !== index"
+                                    type="button"
+                                    @click="editTag(index)"
+                                    class="ml-2 text-blue-500"
+                                >
+                                    Edit
+                                </button>
+                            </span>
+                        </div>
+                        <input
+                            type="text"
+                            id="tags"
+                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                            placeholder="Add a tag and press Enter"
+                            @keyup.enter="
+                                addTag($event.target.value);
+                                $event.target.value = '';
+                            "
+                            @keypress="preventEnter"
+                        />
+                        <span
+                            v-if="form.errors.tags"
+                            class="text-red-500 text-sm"
+                            >{{ form.errors.tags }}</span
                         >
                     </div>
 

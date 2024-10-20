@@ -14,7 +14,7 @@ const form = useForm({
     content: "",
     url_slug: "",
     meta_description: "",
-    state: "",
+    state_id: "",
     status: "",
     tags: [],
     media: [],
@@ -170,7 +170,10 @@ function submit() {
                             class="block text-sm font-medium text-gray-700"
                             >State</label
                         >
-                        <select v-model="form.state" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <select
+                            v-model="form.state_id"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        >
                             <option value="" disabled>Select a state</option>
                             <option
                                 v-for="state in states"
@@ -181,9 +184,9 @@ function submit() {
                             </option>
                         </select>
                         <span
-                            v-if="form.errors.state"
+                            v-if="form.errors.state_id"
                             class="text-red-500 text-sm"
-                            >{{ form.errors.state }}</span
+                            >{{ form.errors.state_id }}</span
                         >
                     </div>
 
@@ -193,12 +196,15 @@ function submit() {
                             class="block text-sm font-medium text-gray-700"
                             >Status</label
                         >
-                            <select v-model="form.status" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <select
+                            v-model="form.status"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        >
                             <option value="public">Public</option>
                             <option value="hidden">Hidden</option>
                         </select>
                         <span
-                            v-if="form.errors.status" 
+                            v-if="form.errors.status"
                             class="text-red-500 text-sm"
                             >{{ form.errors.status }}</span
                         >

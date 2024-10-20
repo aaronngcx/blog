@@ -12,14 +12,14 @@ return new class extends Migration
     public function up()
     {
         Schema::table('comments', function (Blueprint $table) {
-            $table->dropColumn('author'); // Remove the author column
+            $table->dropColumn('author');
         });
     }
 
     public function down()
     {
         Schema::table('comments', function (Blueprint $table) {
-            $table->string('author')->nullable(); // Re-add the author column if rolling back
+            $table->string('author')->nullable();
         });
     }
 };

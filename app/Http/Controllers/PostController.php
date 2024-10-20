@@ -50,6 +50,9 @@ class PostController extends Controller
             'content' => 'required|string',
             'url_slug' => 'required|string|max:255|unique:posts,url_slug',
             'meta_description' => 'nullable|string|max:255',
+            'state_id' => 'required',
+            'status' => 'required|in:hidden,public',
+
         ]);
 
         $post = Post::create([
@@ -95,8 +98,6 @@ class PostController extends Controller
                     Log::error('Error storing file: ' . $e->getMessage());
                 }
             }
-        } else {
-            Log::info('No media files found in the request.');
         }
 
         $post = Post::with(['tags', 'mediaUploads'])->where('url_slug', $post->url_slug)->firstOrFail();
@@ -129,7 +130,9 @@ class PostController extends Controller
             'content' => 'required|string',
             'url_slug' => 'required|string|max:255|unique:posts,url_slug,' . $id,
             'meta_description' => 'nullable|string|max:255',
-            'media.*' => 'file|mimes:jpeg,png,jpg,gif,svg,mp4|max:20480' // validation for media
+            'media.*' => 'file|mimes:jpeg,png,jpg,gif,svg,mp4|max:20480',
+            'state_id' => 'required',
+            'status' => 'required|in:hidden,public'
         ]);
 
         $post->update($validatedData);
@@ -149,8 +152,6 @@ class PostController extends Controller
         $post->tags()->sync($tagIds);
 
         if ($request->hasFile('media')) {
-            Log::info('Media files found.');
-
             foreach ($request->file('media') as $file) {
                 Log::info('Processing file:', [
                     'original_name' => $file->getClientOriginalName(),
@@ -179,8 +180,7 @@ class PostController extends Controller
             Log::info('No media files found in the request.');
         }
 
-        return redirect()->route('posts.index')
-            ->with('success', 'Post updated successfully!');
+        return Inertia::location(route('posts.show', $post->url_slug));
     }
 
 
