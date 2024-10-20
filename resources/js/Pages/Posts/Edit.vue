@@ -16,11 +16,12 @@ const form = useForm({
     url_slug: props.post.url_slug,
     meta_description: props.post.meta_description,
     tags: props.post.tags || [],
+    media: [],
 });
 
 function addTag(tag) {
-    if (tag && !form.tags.includes(tag)) {
-        form.tags.push(tag);
+    if (tag && !form.tags.some((t) => t.name === tag)) {
+        form.tags.push({ name: tag });
     }
 }
 
@@ -29,18 +30,18 @@ function removeTag(index) {
 }
 
 const updateSlug = (event) => {
-      const inputValue = event.target.value;
-      form.url_slug = formatSlug(inputValue);
+    const inputValue = event.target.value;
+    form.url_slug = formatSlug(inputValue);
 };
 
 function formatSlug(text) {
     return text
         .trim()
         .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^\w-]+/g, '')
-        .replace(/--+/g, '-')
-        .replace(/^-+|-+$/g, '');
+        .replace(/\s+/g, "-")
+        .replace(/[^\w-]+/g, "")
+        .replace(/--+/g, "-")
+        .replace(/^-+|-+$/g, "");
 }
 
 watch(
@@ -50,9 +51,17 @@ watch(
     }
 );
 
-function handleFileUpload(event) {
-    form.media = Array.from(event.target.files);
-}
+const handleFileUpload = (event) => {
+    const files = event.target.files;
+    for (let i = 0; i < files.length; i++) {
+        form.media.push(files[i]);
+    }
+};
+
+const removeMedia = (index) => {
+    form.media.splice(index, 1);
+};
+
 
 function preventEnter(event) {
     if (event.key === "Enter") {
@@ -61,13 +70,29 @@ function preventEnter(event) {
 }
 
 function submit() {
-    form.put(route("posts.update", props.post.id), {
+    const formData = new FormData();
+
+    Object.keys(form).forEach((key) => {
+        if (key === 'media') {
+            form[key].forEach((file, index) => {
+                formData.append(`media[${index}]`, file);
+            });
+        } else {
+            formData.append(key, form[key]);
+        }
+    });
+
+    form.post(route('posts.update', props.post.id), formData, {
         preserveScroll: true,
+        forceFormData: true,
         onSuccess: () => {
-            alert("Post updated successfully!");
+            form.reset();
         },
     });
 }
+
+
+
 </script>
 
 <template>
@@ -196,51 +221,40 @@ function submit() {
                         >
                     </div>
 
-                    <!-- Media Section -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700"
-                            >Media Uploads</label
-                        >
-                        <div
-                            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-2"
-                        >
-                            <div
-                                v-for="media in post.media_uploads"
-                                :key="media.id"
-                                class="border p-2 rounded-md"
-                            >
-                                <img
-                                    :src="media.file_path"
-                                    alt="Media"
-                                    class="w-full h-auto rounded-md mb-2"
-                                />
-                                <div class="flex justify-between items-center">
-                                    <span class="text-sm">{{
-                                        media.file_name
-                                    }}</span>
-                                    <button
-                                        type="button"
-                                        @click="removeMedia(media.id)"
-                                        class="text-red-600"
-                                    >
-                                        Remove
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Upload Media Button -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700"
-                            >Upload New Media</label
+                        <label
+                            for="media"
+                            class="block text-sm font-medium text-gray-700"
+                            >Upload Media</label
                         >
                         <input
                             type="file"
+                            id="media"
                             @change="handleFileUpload"
-                            multiple
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                            multiple
                         />
+                        <div class="mt-2">
+                            <span
+                                v-for="(file, index) in form.media_uploads"
+                                :key="index"
+                                class="block text-sm text-gray-700"
+                            >
+                                {{ file.name }}
+                                <button
+                                    type="button"
+                                    @click="removeMedia(index)"
+                                    class="text-red-600 ml-2"
+                                >
+                                    &times;
+                                </button>
+                            </span>
+                        </div>
+                        <span
+                            v-if="form.errors.media"
+                            class="text-red-500 text-sm"
+                            >{{ form.errors.media }}</span
+                        >
                     </div>
 
                     <!-- Update Button -->
