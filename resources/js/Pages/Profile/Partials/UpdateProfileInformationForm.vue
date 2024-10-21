@@ -1,30 +1,28 @@
 <script setup>
-import { ref } from 'vue';
-import { Link, router, useForm } from '@inertiajs/vue3';
-import ActionMessage from '@/Components/ActionMessage.vue';
-import FormSection from '@/Components/FormSection.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import SecondaryButton from '@/Components/SecondaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
+import { ref } from "vue";
+import { Link, router, useForm } from "@inertiajs/vue3";
+import ActionMessage from "@/Components/ActionMessage.vue";
+import FormSection from "@/Components/FormSection.vue";
+import InputError from "@/Components/InputError.vue";
+import InputLabel from "@/Components/InputLabel.vue";
+import PrimaryButton from "@/Components/PrimaryButton.vue";
+import SecondaryButton from "@/Components/SecondaryButton.vue";
+import TextInput from "@/Components/TextInput.vue";
 
 const props = defineProps({
     user: Object,
 });
 
 const form = useForm({
-    _method: 'PUT',
+    _method: "PUT",
     name: props.user.name,
     email: props.user.email,
-    gender: props.user.gender || '',
-    date_of_birth: props.user.date_of_birth || '',
-    mailing_address: props.user.mailing_address || '',
-    country: props.user.country || '',
     photo: null,
+    gender: props.user.gender || "",
+    date_of_birth: props.user.date_of_birth || "",
+    mailing_address: props.user.mailing_address || "",
+    country: props.user.country || "",
 });
-
-const countries = ref(["Malaysia", "Singapore"]);
 
 const verificationLinkSent = ref(null);
 const photoPreview = ref(null);
@@ -35,32 +33,175 @@ const updateProfileInformation = () => {
         form.photo = photoInput.value.files[0];
     }
 
-    form.post(route('user-profile-information.update'), {
-        errorBag: 'updateProfileInformation',
+    form.post(route("user-profile-information.update"), {
+        errorBag: "updateProfileInformation",
         preserveScroll: true,
         onSuccess: () => clearPhotoFileInput(),
     });
 };
 
+const sendEmailVerification = () => {
+    verificationLinkSent.value = true;
+};
+
+const selectNewPhoto = () => {
+    photoInput.value.click();
+};
+
+const updatePhotoPreview = () => {
+    const photo = photoInput.value.files[0];
+
+    if (!photo) return;
+
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+        photoPreview.value = e.target.result;
+    };
+
+    reader.readAsDataURL(photo);
+};
+
+const deletePhoto = () => {
+    router.delete(route("current-user-photo.destroy"), {
+        preserveScroll: true,
+        onSuccess: () => {
+            photoPreview.value = null;
+            clearPhotoFileInput();
+        },
+    });
+};
+
+const clearPhotoFileInput = () => {
+    if (photoInput.value?.value) {
+        photoInput.value.value = null;
+    }
+};
 </script>
 
 <template>
     <FormSection @submitted="updateProfileInformation">
-        <template #title>
-            Profile Information
-        </template>
+        <template #title> Profile Information </template>
 
         <template #description>
-            Update your account's profile information.
+            Update your account's profile information and email address.
         </template>
 
         <template #form>
-            <!-- Existing fields here (Photo, Name, Email) -->
+            <div
+                v-if="$page.props.jetstream.managesProfilePhotos"
+                class="col-span-6 sm:col-span-4"
+            >
+                <input
+                    id="photo"
+                    ref="photoInput"
+                    type="file"
+                    class="hidden"
+                    @change="updatePhotoPreview"
+                />
 
-            <!-- Gender -->
+                <InputLabel for="photo" value="Photo" />
+
+                <div v-show="!photoPreview" class="mt-2">
+                    <img
+                        :src="user.profile_picture"
+                        class="rounded-full h-20 w-20 object-cover"
+                    />
+                </div>
+
+                <div v-show="photoPreview" class="mt-2">
+                    <span
+                        class="block rounded-full w-20 h-20 bg-cover bg-no-repeat bg-center"
+                        :style="
+                            'background-image: url(\'' + photoPreview + '\');'
+                        "
+                    />
+                </div>
+
+                <SecondaryButton
+                    class="mt-2 me-2"
+                    type="button"
+                    @click.prevent="selectNewPhoto"
+                >
+                    Select A New Photo
+                </SecondaryButton>
+
+                <SecondaryButton
+                    v-if="user.profile_picture"
+                    type="button"
+                    class="mt-2"
+                    @click.prevent="deletePhoto"
+                >
+                    Remove Photo
+                </SecondaryButton>
+
+                <InputError :message="form.errors.photo" class="mt-2" />
+            </div>
+
+            <!-- Name -->
+            <div class="col-span-6 sm:col-span-4">
+                <InputLabel for="name" value="Name" />
+                <TextInput
+                    id="name"
+                    v-model="form.name"
+                    type="text"
+                    class="mt-1 block w-full"
+                    required
+                    autocomplete="name"
+                />
+                <InputError :message="form.errors.name" class="mt-2" />
+            </div>
+
+            <!-- Email -->
+            <div class="col-span-6 sm:col-span-4">
+                <InputLabel for="email" value="Email" />
+                <TextInput
+                    id="email"
+                    v-model="form.email"
+                    type="email"
+                    class="mt-1 block w-full"
+                    required
+                    autocomplete="username"
+                />
+                <InputError :message="form.errors.email" class="mt-2" />
+
+                <div
+                    v-if="
+                        $page.props.jetstream.hasEmailVerification &&
+                        user.email_verified_at === null
+                    "
+                >
+                    <p class="text-sm mt-2">
+                        Your email address is unverified.
+
+                        <Link
+                            :href="route('verification.send')"
+                            method="post"
+                            as="button"
+                            class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            @click.prevent="sendEmailVerification"
+                        >
+                            Click here to re-send the verification email.
+                        </Link>
+                    </p>
+
+                    <div
+                        v-show="verificationLinkSent"
+                        class="mt-2 font-medium text-sm text-green-600"
+                    >
+                        A new verification link has been sent to your email
+                        address.
+                    </div>
+                </div>
+            </div>
+
             <div class="col-span-6 sm:col-span-4">
                 <InputLabel for="gender" value="Gender" />
-                <select id="gender" v-model="form.gender" class="mt-1 block w-full border-gray-300 rounded-md">
+                <select
+                    id="gender"
+                    v-model="form.gender"
+                    class="mt-1 block w-full border-gray-300 rounded-md"
+                >
                     <option value="" disabled>Select Gender</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
@@ -92,26 +233,37 @@ const updateProfileInformation = () => {
                     type="text"
                     class="mt-1 block w-full"
                 />
-                <InputError :message="form.errors.mailing_address" class="mt-2" />
+                <InputError
+                    :message="form.errors.mailing_address"
+                    class="mt-2"
+                />
             </div>
 
             <!-- Country Dropdown -->
             <div class="col-span-6 sm:col-span-4">
                 <InputLabel for="country" value="Country" />
-                <select id="country" v-model="form.country" class="mt-1 block w-full border-gray-300 rounded-md">
+                <select
+                    id="country"
+                    v-model="form.country"
+                    class="mt-1 block w-full border-gray-300 rounded-md"
+                >
                     <option value="" disabled>Select Country</option>
-                    <option v-for="country in countries" :key="country" :value="country">{{ country }}</option>
+                    <option value="Malaysia">Malaysia</option>
+                    <option value="Singapore">Singapore</option>
                 </select>
                 <InputError :message="form.errors.country" class="mt-2" />
             </div>
         </template>
 
-        <!-- Actions -->
         <template #actions>
             <ActionMessage :on="form.recentlySuccessful" class="me-3">
                 Saved.
             </ActionMessage>
-            <PrimaryButton :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
+
+            <PrimaryButton
+                :class="{ 'opacity-25': form.processing }"
+                :disabled="form.processing"
+            >
                 Save
             </PrimaryButton>
         </template>

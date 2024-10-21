@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Tag;
 use App\Models\Post;
+use App\Models\User;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -15,10 +17,12 @@ class HomeController extends Controller
      */
     public function index()
     {
-        $posts = Post::where('status', 'public')->get();
+        $tags = Tag::all();
+        $posts = Post::where('status', 'public')->with('tags')->get();
 
         return Inertia::render('Dashboard', [
             'posts' => $posts,
+            'tags' => $tags,
             'canLogin' => Route::has('login'),
             'canRegister' => Route::has('register'),
             'laravelVersion' => Application::VERSION,

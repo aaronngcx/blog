@@ -41,21 +41,21 @@ const logout = () => {
                         <div class="flex">
                             <!-- Logo -->
                             <div class="shrink-0 flex items-center">
-                                <Link :href="route('dashboard')">
+                                <Link :href="route('/')">
                                     <ApplicationMark class="block h-9 w-auto" />
                                 </Link>
                             </div>
 
                             <!-- Navigation Links -->
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <NavLink :href="route('dashboard')" :active="route().current('dashboard')">
-                                    Dashboard
+                                <NavLink :href="route('/')" :active="route().current('/')">
+                                    Home
                                 </NavLink>
                             </div>
                         </div>
 
                         <!-- User Settings Dropdown -->
-                        <div class="hidden sm:flex sm:items-center sm:ms-6">
+                        <div class="sm:flex sm:items-center sm:ms-6">
                             <div v-if="$page.props.auth.user" class="ms-3 relative">
                                 <Dropdown align="right" width="48">
                                     <template #trigger>

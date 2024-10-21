@@ -5,9 +5,12 @@ import AppLayout from "@/Layouts/AppLayout.vue";
 import SectionBorder from "@/Components/SectionBorder.vue";
 import MyEditor from "@/Components/MyEditor.vue";
 import { usePage } from "@inertiajs/vue3";
+import { router } from "@inertiajs/vue3";
 
 const props = defineProps({
     post: Object,
+    states: Array,
+    allTags: Array,
 });
 
 const form = useForm({
@@ -15,11 +18,30 @@ const form = useForm({
     content: props.post.content,
     url_slug: props.post.url_slug,
     meta_description: props.post.meta_description,
-    tags: props.post.tags || [],
-    media: [],
+    state_id: props.post.state_id || "",
+    status: props.post.status,
+    media: props.post.media_uploads || [],
+    tags: props.post.tags.map((tag) => tag.name),
 });
 
-const editingTagIndex = ref(null);
+const filteredTags = ref([]);
+const tagInput = ref("");
+const previewLink = ref(null);
+
+const previewPost = async () => {
+    try {
+        const response = await axios.post(
+            route("posts.generate-preview-link", { post: props.post.id }),
+            {
+                postId: props.post.id,
+            }
+        );
+        const link = response.data.preview_link;
+        window.open(link, "_blank");
+    } catch (error) {
+        console.error("Error generating preview link:", error);
+    }
+};
 
 const updateSlug = (event) => {
     const inputValue = event.target.value;
@@ -36,15 +58,25 @@ function formatSlug(text) {
         .replace(/^-+|-+$/g, "");
 }
 
-function addTag(tag) {
-    if (tag && !form.tags.some((t) => t.name === tag)) {
-        form.tags.push({ name: tag });
+const addTag = (tag) => {
+    const trimmedTag = tag.trim();
+    if (trimmedTag && !form.tags.includes(trimmedTag)) {
+        form.tags.push(trimmedTag);
+        filteredTags.value = [];
+        tagInput.value = "";
     }
-}
+};
 
-function removeTag(index) {
+const filterTags = (input) => {
+    const trimmedInput = input.trim().toLowerCase();
+    filteredTags.value = props.allTags.filter((tag) =>
+        tag.name.toLowerCase().includes(trimmedInput)
+    );
+};
+
+const removeTag = (index) => {
     form.tags.splice(index, 1);
-}
+};
 
 function editTag(index) {
     editingTagIndex.value = index;
@@ -56,7 +88,7 @@ function updateTag(index, newTagName) {
         !form.tags.some((t, i) => i !== index && t.name === newTagName)
     ) {
         form.tags[index].name = newTagName;
-        editingTagIndex.value = null; // Reset editing state
+        editingTagIndex.value = null;
     }
 }
 
@@ -74,8 +106,22 @@ const handleFileUpload = (event) => {
     }
 };
 
-const removeMedia = (index) => {
-    form.media.splice(index, 1);
+const removeMedia = async (index) => {
+    const mediaId = form.media[index].id;
+    const confirmed = confirm("Are you sure you want to delete this media?");
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        await axios.delete(
+            route("posts.delete-media", { post: props.post.id, mediaId })
+        );
+        form.media.splice(index, 1);
+    } catch (error) {
+        console.error("Error deleting media:", error);
+    }
 };
 
 function preventEnter(event) {
@@ -113,6 +159,15 @@ function submit() {
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 Edit Post
             </h2>
+
+            <div class="flex justify-end mt-4 space-x-4">
+                <button
+                    @click="previewPost"
+                    class="bg-yellow-600 text-white py-2 px-4 rounded-md hover:bg-yellow-500"
+                >
+                    Preview Post
+                </button>
+            </div>
         </template>
 
         <div class="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8">
@@ -200,7 +255,7 @@ function submit() {
                             >State</label
                         >
                         <select
-                            v-model="form.state"
+                            v-model="form.state_id"
                             class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                         >
                             <option value="" disabled>Select a state</option>
@@ -213,9 +268,9 @@ function submit() {
                             </option>
                         </select>
                         <span
-                            v-if="form.errors.state"
+                            v-if="form.errors.state_id"
                             class="text-red-500 text-sm"
-                            >{{ form.errors.state }}</span
+                            >{{ form.errors.state_id }}</span
                         >
                     </div>
 
@@ -243,8 +298,9 @@ function submit() {
                         <label
                             for="media"
                             class="block text-sm font-medium text-gray-700"
-                            >Upload Media</label
                         >
+                            Upload Media
+                        </label>
                         <input
                             type="file"
                             id="media"
@@ -252,22 +308,43 @@ function submit() {
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
                             multiple
                         />
+
                         <div class="mt-2">
-                            <span
-                                v-for="(file, index) in form.media_uploads"
-                                :key="index"
-                                class="block text-sm text-gray-700"
-                            >
-                                {{ file.name }}
-                                <button
-                                    type="button"
-                                    @click="removeMedia(index)"
-                                    class="text-red-600 ml-2"
+                            <div class="flex" v-if="form.media.length">
+                                <span
+                                    v-for="(file, index) in form.media"
+                                    :key="index"
+                                    class="block text-sm text-gray-700"
                                 >
-                                    &times;
-                                </button>
-                            </span>
+                                    <template v-if="file.file_path">
+                                        <img
+                                            :src="file.file_path"
+                                            alt="Media preview"
+                                            class="w-48 h-48 mx-5 object-cover"
+                                        />
+                                        <button
+                                            type="button"
+                                            @click="removeMedia(index)"
+                                            class="text-red-600 mt-2 p-2 rounded-md hover:bg-red-100"
+                                        >
+                                            &times;
+                                        </button>
+                                    </template>
+
+                                    <template v-else>
+                                        {{ file.name }}
+                                        <button
+                                            type="button"
+                                            @click="removeMedia(index)"
+                                            class="text-red-600 mt-2"
+                                        >
+                                            &times;
+                                        </button>
+                                    </template>
+                                </span>
+                            </div>
                         </div>
+
                         <span
                             v-if="form.errors.media"
                             class="text-red-500 text-sm"
@@ -275,60 +352,66 @@ function submit() {
                         >
                     </div>
 
-                    <!-- Tags Input -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700"
+                    <!-- Tags Section -->
+                    <div class="mb-4">
+                        <label
+                            for="tags"
+                            class="block text-sm font-medium text-gray-700"
                             >Tags</label
                         >
-                        <div class="flex flex-wrap gap-2 mb-2">
+                        <div class="flex items-center mb-2">
+                            <input
+                                v-model="tagInput"
+                                type="text"
+                                placeholder="Add a tag"
+                                @input="filterTags(tagInput)"
+                                @keypress.preventEnter
+                                class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                            />
+                            <button
+                                type="button"
+                                @click="addTag(tagInput)"
+                                class="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all"
+                                style="height: 42px; line-height: 1.25"
+                            >
+                                Add
+                            </button>
+                        </div>
+
+                        <!-- Tags Suggestions Dropdown -->
+                        <ul
+                            v-if="filteredTags.length"
+                            class="border border-gray-300 rounded-md bg-white absolute mt-1 w-full z-10"
+                        >
+                            <li
+                                v-for="(tag, index) in filteredTags"
+                                :key="index"
+                                @click="addTag(tag.name)"
+                                class="cursor-pointer p-2 hover:bg-blue-100"
+                            >
+                                {{ tag.name }}
+                            </li>
+                        </ul>
+
+                        <!-- Display selected tags -->
+                        <div class="flex flex-wrap mt-2">
                             <span
                                 v-for="(tag, index) in form.tags"
                                 :key="index"
-                                class="bg-blue-200 text-blue-800 rounded-full px-3 py-1 text-sm flex items-center"
+                                class="bg-blue-200 text-blue-800 rounded-full px-2 py-1 text-sm mr-2 mb-2 flex items-center"
                             >
-                                <span v-if="editingTagIndex !== index">{{
-                                    tag.name
-                                }}</span>
-                                <input
-                                    v-if="editingTagIndex === index"
-                                    type="text"
-                                    v-model="tag.name"
-                                    @blur="
-                                        editingTagIndex = null;
-                                        updateTag(index, tag.name);
-                                    "
-                                    @keyup.enter="updateTag(index, tag.name)"
-                                    @keydown.enter.prevent
-                                    class="border border-gray-300 rounded-md p-1"
-                                />
+                                {{ tag }}
                                 <button
                                     type="button"
                                     @click="removeTag(index)"
-                                    class="ml-2 text-red-600"
+                                    class="ml-1 text-red-600"
                                 >
-                                    &times;
-                                </button>
-                                <button
-                                    v-if="editingTagIndex !== index"
-                                    type="button"
-                                    @click="editTag(index)"
-                                    class="ml-2 text-blue-500"
-                                >
-                                    Edit
+                                    x
                                 </button>
                             </span>
                         </div>
-                        <input
-                            type="text"
-                            id="tags"
-                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                            placeholder="Add a tag and press Enter"
-                            @keyup.enter="
-                                addTag($event.target.value);
-                                $event.target.value = '';
-                            "
-                            @keypress="preventEnter"
-                        />
+
+                        <!-- Error message for tags if any -->
                         <span
                             v-if="form.errors.tags"
                             class="text-red-500 text-sm"

@@ -7,6 +7,10 @@ import MyEditor from "@/Components/MyEditor.vue";
 
 const props = defineProps({
     states: Array,
+    allTags: {
+        type: Array,
+        required: true,
+    },
 });
 
 const form = useForm({
@@ -20,16 +24,28 @@ const form = useForm({
     media: [],
 });
 
-function addTag(tag) {
-    if (tag && !form.tags.includes(tag)) {
-        form.tags.push(tag);
-    }
-}
+const filteredTags = ref([]);
+const tagInput = ref("");
 
-function removeTag(tagToRemove) {
-    f;
-    form.tags = form.tags.filter((tag) => tag !== tagToRemove);
-}
+const addTag = (tag) => {
+    const trimmedTag = tag.trim();
+    if (trimmedTag && !form.tags.includes(trimmedTag)) {
+        form.tags.push(trimmedTag);
+        filteredTags.value = [];
+        tagInput.value = "";
+    }
+};
+
+const filterTags = (input) => {
+    const trimmedInput = input.trim().toLowerCase();
+    filteredTags.value = props.allTags.filter((tag) =>
+        tag.name.toLowerCase().includes(trimmedInput)
+    );
+};
+
+const removeTag = (index) => {
+    form.tags.splice(index, 1);
+};
 
 const updateSlug = (event) => {
     const inputValue = event.target.value;
@@ -51,7 +67,7 @@ function handleFileUpload(event) {
 }
 
 function preventEnter(event) {
-    if (event.key === "Enter") {
+    if (event.key === "Enter" && !event.target.value.trim()) {
         event.preventDefault();
     }
 }
@@ -239,6 +255,7 @@ function submit() {
                         >
                     </div>
 
+                    <!--Tags Section-->
                     <div>
                         <label
                             for="tags"
@@ -249,20 +266,41 @@ function submit() {
                             <input
                                 type="text"
                                 id="tags"
+                                v-model="tagInput"
                                 class="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                                placeholder="Add a tag and press Enter"
-                                @keyup.enter="
-                                    addTag($event.target.value);
-                                    $event.target.value = '';
-                                "
+                                placeholder="Add a tag"
+                                @input="filterTags(tagInput)"
                                 @keypress="preventEnter"
                             />
+                            <button
+                                type="button"
+                                @click="addTag(tagInput)"
+                                class="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all"
+                                style="height: 42px; line-height: 1.25"
+                            >
+                                Add
+                            </button>
                         </div>
                         <p class="text-xs italic text-gray-500">
-                            Add a tag and press Enter
+                            Click "Add Tag" to add a new tag
                         </p>
 
-                        <div class="flex flex-wrap">
+                        <!-- Suggestions Dropdown -->
+                        <ul
+                            v-if="filteredTags.length"
+                            class="border border-gray-300 rounded-md bg-white absolute mt-1 w-full z-10"
+                        >
+                            <li
+                                v-for="(tag, index) in filteredTags"
+                                :key="index"
+                                @click="addTag(tag.name)"
+                                class="cursor-pointer p-2 hover:bg-blue-100"
+                            >
+                                {{ tag.name }}
+                            </li>
+                        </ul>
+
+                        <div class="flex flex-wrap mt-2">
                             <span
                                 v-for="(tag, index) in form.tags"
                                 :key="index"
@@ -278,6 +316,7 @@ function submit() {
                                 </button>
                             </span>
                         </div>
+
                         <span
                             v-if="form.errors.tags"
                             class="text-red-500 text-sm"

@@ -26,7 +26,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name', 'email', 'password', 'gender', 'date_of_birth', 'mailing_address', 'country'
+        'name', 'email', 'password', 'gender', 'date_of_birth', 'profile_picture', 'mailing_address', 'country'
     ];
 
     /**
@@ -56,10 +56,15 @@ class User extends Authenticatable
      * @return array<string, string>
      */
     protected function casts(): array
-    {        
+    {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function posts()
+    {
+        return $this->hasMany(Post::class);
     }
 }

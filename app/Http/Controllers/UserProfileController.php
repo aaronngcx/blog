@@ -5,37 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class UserProfileController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
     public function show(User $user)
     {
         return Inertia::render('Profile/Show', [
@@ -43,17 +18,6 @@ class UserProfileController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(User $user)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request)
     {
         $validatedData = $request->validate([
@@ -63,10 +27,16 @@ class UserProfileController extends Controller
             'date_of_birth' => 'nullable|date',
             'mailing_address' => 'nullable|string|max:255',
             'country' => 'nullable|string|max:255',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Update the user's profile data
         $user = Auth::user();
+
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('profile_pictures', 'public');
+            $user->update(['profile_picture' => URL::to(Storage::url($path))]);
+        }
+
         $user->update($validatedData);
 
         return Inertia::render('Profile/Show', [
@@ -74,11 +44,21 @@ class UserProfileController extends Controller
         ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(User $user)
+    public function destroyProfilePhoto()
     {
-        //
+        $user = Auth::user();
+
+        if ($user->profile_picture) {
+            $profilePicturePath = str_replace('/storage/', 'public/', $user->profile_picture); // Convert to the storage path
+
+            if (Storage::disk('public')->exists($profilePicturePath)) {
+                Storage::disk('public')->delete($profilePicturePath);
+            }
+
+            $user->profile_picture = null;
+            $user->save();
+        }
+
+        return back()->with('status', 'Profile photo removed successfully.');
     }
 }

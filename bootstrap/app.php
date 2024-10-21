@@ -17,7 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        //
+        $middleware->alias([
+            'signed' => \App\Http\Middleware\ValidateSignature::class, // Add this line
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

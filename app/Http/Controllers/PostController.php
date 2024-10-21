@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\Tag;
 use App\Models\Post;
+use App\Models\User;
 use Inertia\Inertia;
 use App\Models\State;
-use Illuminate\Support\Str;
+use App\Models\MediaUploads;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -26,10 +29,17 @@ class PostController extends Controller
                     ->orWhere('content', 'like', '%' . $search . '%');
             })
             ->paginate(9);
+        $totalPosts = Post::count();
+        $usersWithPostCount = User::withCount('posts')
+            ->orderBy('posts_count', 'desc')
+            ->take(5)
+            ->get();
 
         return Inertia::render('Posts/Index', [
             'posts' => $posts,
             'user' => Auth::user(),
+            'usersWithPostCount' => $usersWithPostCount,
+            'totalPosts' => $totalPosts,
         ]);
     }
 
@@ -37,9 +47,11 @@ class PostController extends Controller
     public function create()
     {
         $states = State::all();
+        $tags = Tag::all();
 
         return Inertia::render('Posts/Create', [
             'states' => $states,
+            'allTags' => $tags,
         ]);
     }
 
@@ -117,8 +129,14 @@ class PostController extends Controller
     public function edit($id)
     {
         $post = Post::with('mediaUploads', 'tags')->find($id);
+        $states = State::all();
+        $allTags = Tag::all();
 
-        return Inertia::render('Posts/Edit', ['post' => $post]);
+        return Inertia::render('Posts/Edit', [
+            'post' => $post,
+            'states' => $states,
+            'allTags' => $allTags
+        ]);
     }
 
     public function update(Request $request, $id)
@@ -140,11 +158,8 @@ class PostController extends Controller
         $tags = $request->input('tags');
         $tagIds = [];
         foreach ($tags as $tag) {
-            if (is_array($tag) && isset($tag['name'])) {
-                $tagName = $tag['name'];
-
-                $tagModel = Tag::firstOrCreate(['name' => $tagName]);
-
+            if (!empty($tag)) {
+                $tagModel = Tag::firstOrCreate(['name' => $tag]);
                 $tagIds[] = $tagModel->id;
             }
         }
@@ -191,5 +206,37 @@ class PostController extends Controller
 
         return redirect()->route('posts.index')
             ->with('success', 'Post deleted successfully!');
+    }
+
+    public function generatePreviewLink($postId)
+    {
+        $post = Post::findOrFail($postId);
+        $expiresAt = Carbon::now()->addMinutes(5);
+        $previewLink = URL::temporarySignedRoute('posts.preview', $expiresAt, ['post' => $post]);
+        Log::info('Generated Preview Link:', ['link' => $previewLink]);
+
+        return response()->json(['preview_link' => $previewLink]);
+    }
+
+    public function preview(Post $post)
+    {
+        $post = Post::with(['tags', 'mediaUploads', 'comments', 'comments.user'])->where('id', $post->id)->first();
+
+        return inertia('Posts/Preview', [
+            'post' => $post,
+        ]);
+    }
+
+    public function deleteMedia($mediaId)
+    {
+        $media = MediaUploads::find($mediaId);
+
+        if (Storage::exists($media->file_path)) {
+            Storage::delete($media->file_path);
+        }
+
+        $media->delete();
+
+        return response()->json(['message' => 'Media deleted successfully']);
     }
 }
