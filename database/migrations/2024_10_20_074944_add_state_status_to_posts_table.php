@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('posts', function (Blueprint $table) {
-            $table->unsignedBigInteger('state_id')->default(1)->after('content');
+            $table->unsignedBigInteger('state_id')->nullable()->default(1)->after('content');
             $table->foreign('state_id')->references('id')->on('states')->onDelete('set null');
 
             $table->enum('status', ['hidden', 'public'])->default('hidden')->after('state_id');
