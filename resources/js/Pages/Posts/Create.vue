@@ -67,7 +67,7 @@ function handleFileUpload(event) {
 }
 
 function preventEnter(event) {
-    if (event.key === "Enter" && !event.target.value.trim()) {
+    if (event.key === "Enter") {
         event.preventDefault();
     }
 }
@@ -277,6 +277,7 @@ function submit() {
                                 @click="addTag(tagInput)"
                                 class="ml-2 bg-blue-500 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-all"
                                 style="height: 42px; line-height: 1.25"
+                                @keypress="preventEnter"
                             >
                                 Add
                             </button>
